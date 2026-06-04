@@ -1,6 +1,6 @@
 # LogLens - Project Plan
 
-> **Purpose:** source-of-truth roadmap. Lives in the repo so any contributor can resume work from the current phase.
+> **Purpose:** source-of-truth roadmap. Lives in the repo so any contributor (human or AI) can resume work from the current phase.
 >
 > **Maintenance:** update on every phase close. The Phase Status table reflects current state. The Change Log records what shifted between phase closures.
 >
@@ -15,6 +15,17 @@ LogLens is a machine learning classifier for system log lines, trained on the [L
 **Scope:** end-to-end ML service covering environment management, model training, API serving, testing, CI/CD, containerization, and cloud deployment. Each phase isolates one layer.
 
 **Repo:** https://github.com/PritKalariya/loglens
+
+---
+
+## Working Philosophy
+
+Each phase has two stages:
+
+1. **Learning sprint** - move fast, write code in notebooks, prototype messily, prioritize understanding over hygiene. Goal: internalize what the phase teaches.
+2. **Polish pass** - once learning is solid, promote notebook code to modules, add tests, update README, write any missing scripts. The phase closes only after polish.
+
+Tests, typed modules, scripts, and documentation polish are deliberately deferred until learning is done. Premature abstraction during a learning sprint kills the feedback loop the sprint exists for. The phases below describe both stages where applicable.
 
 ---
 
@@ -86,23 +97,25 @@ Legend: ✅ Done · 🟡 Current · 🔵 Planned · ⚪ Deferred · ❌ Dropped
 
 ## Phase 4 - Data Layer 🟡
 
-**Goal:** ingest the LogHub dataset, explore it, design parsing/labeling approach.
+**Goal:** working loader that returns a clean `(text, label)` DataFrame; class balance understood.
 
-**Planned work:**
-- Decide BGL vs. HDFS dataset (tradeoffs reviewed at phase start)
-- `scripts/download_dataset.py` - reproducible download
-- `data/raw/README.md` - document source + license of chosen dataset
-- EDA notebook: line distribution, vocab size, label balance, anomaly patterns, recommended train/test split
-- `src/loglens/data.py`:
-  - `load_dataset(name: str) -> pd.DataFrame` returning `text` and `label` columns
-  - stratified train/test split wrapper
-- `tests/test_data.py`: shape assertions, no-null guarantees, label-value validation
+**Learning sprint:**
+- Acquire BGL dataset (raw `BGL.log` and `BGL.log_structured.csv` from LogHub); place under `data/raw/`
+- Inspect both files; decide which to load (based on which gives a correct loader in fewer lines of code)
+- Decide which field becomes `text` (Content, with Level excluded, is the honest ML setup; document choice as a markdown cell with one-sentence rationale)
+- Notebook cell: loader function returning DataFrame with exactly two columns - `text` and binarized `label` (0 = normal, 1 = anomaly)
+- Print and record class balance ratio
+- Any further EDA that surfaces during exploration (line length distribution, vocab size, duplicate-message frequency) is welcome; keep it in the notebook
 
-**Deliverable:** working data loader with passing tests; EDA notebook checked in.
+**Polish pass (after learning is done, before phase closes):**
+- Promote the notebook loader function to `src/loglens/data.py`
+- `data/raw/README.md` documenting dataset source, license, and which file the loader expects
+- `tests/test_data.py`: shape assertions, no-null guarantees, label-domain validation
+- Optional: `scripts/download_dataset.py` if dataset acquisition needs to be reproducible from the repo
 
 **Required reading:** [LogHub repo overview](https://github.com/logpai/loghub).
 
-**Exit criteria:** `uv run pytest tests/test_data.py` passes; EDA notebook documents dataset characteristics.
+**Exit criteria:** loader works in notebook; class balance recorded; `text` column decision documented; polish pass items completed and committed.
 
 ---
 
@@ -203,6 +216,9 @@ Decisions that propagate forward; not revisited without reason.
 | 3 | ruff (replaces flake8/isort/black) | Never expected |
 | 3 | Pre-commit hooks (not CI-only) | Never expected |
 | 3 | Conventional Commits | Never expected |
+| 4 | BGL dataset (over HDFS / Thunderbird) | Scaling test needed (Thunderbird listed as Phase 8 stretch) |
+| 4 | Notebook-first; promote to module only when imported elsewhere | Never expected (general principle) |
+| 4 | Text input = Content only, Level excluded | After baseline; full-row variant as ablation experiment |
 | Pending | Defer Docker until Phase 8 | After Phase 7 closes |
 
 ---
