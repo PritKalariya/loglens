@@ -1,17 +1,17 @@
 # LogLens
 
-A machine learning classifier for system log lines, trained on the [LogHub](https://github.com/logpai/loghub) BGL/HDFS datasets. Exposes a FastAPI `/predict` endpoint for real-time inference.
+A machine learning classifier for system log lines, trained on the [LogHub](https://github.com/logpai/loghub) BGL dataset. Exposes a FastAPI `/predict` endpoint for real-time inference.
 
 ## Why
 
-Operations teams generate millions of log lines daily. Most are routine; a small fraction signal failures, security incidents, or anomalies. This project explores a lightweight ML approach to surfacing the signal from the noise — the kind of foundational classifier that sits underneath modern observability platforms (Datadog, Splunk, New Relic).
+Operations teams generate millions of log lines daily. Most are routine; a small fraction signal failures, security incidents, or anomalies. This project explores a lightweight ML approach to surfacing the signal from the noise - the kind of foundational classifier that sits underneath modern observability platforms (Datadog, Splunk, New Relic).
 
 ## Status
 
-🚧 Under active development — building out the MLOps pipeline incrementally.
+🚧 Under active development - building out the MLOps pipeline incrementally.
 
 - [x] Project scaffold, tooling, CI-ready quality gates
-- [ ] Dataset ingestion (LogHub)
+- [x] Dataset ingestion (LogHub BGL) + exploratory analysis
 - [ ] Baseline classifier (TF-IDF + Logistic Regression)
 - [ ] FastAPI `/predict` endpoint
 - [ ] Dockerization
@@ -20,13 +20,13 @@ Operations teams generate millions of log lines daily. Most are routine; a small
 
 ## Tech Stack
 
-- **Python 3.12** — managed by [uv](https://github.com/astral-sh/uv)
-- **scikit-learn** — model training
-- **FastAPI + uvicorn** — inference API
-- **pandas** — data wrangling
-- **ruff** — lint + format
-- **pre-commit** — automated quality gates
-- **pytest** — testing
+- **Python 3.12** - managed by [uv](https://github.com/astral-sh/uv)
+- **scikit-learn** - model training
+- **FastAPI + uvicorn** - inference API
+- **pandas** - data wrangling
+- **ruff** - lint + format
+- **pre-commit** - automated quality gates
+- **pytest** - testing
 
 ## Quickstart
 

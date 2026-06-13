@@ -36,8 +36,8 @@ Tests, typed modules, scripts, and documentation polish are deliberately deferre
 | 1 | Identity Foundation (Git + GitHub) | ✅ Done |
 | 2 | Project Scaffold (uv + folder layout) | ✅ Done |
 | 3 | Quality Gates + Public Repo | ✅ Done |
-| 4 | Data Layer (LogHub ingestion + EDA) | 🟡 Current |
-| 5 | Baseline Model (TF-IDF + LogReg) | 🔵 Planned |
+| 4 | Data Layer (LogHub ingestion + EDA) | ✅ Done |
+| 5 | Baseline Model (TF-IDF + LogReg) | 🟡 Current |
 | 6 | FastAPI Inference Endpoint | 🔵 Planned |
 | 7 | CI/CD via GitHub Actions | 🔵 Planned |
 | 8 | Containerization + Cloud Deploy (capstone) | 🔵 Planned |
@@ -95,27 +95,34 @@ Legend: ✅ Done · 🟡 Current · 🔵 Planned · ⚪ Deferred · ❌ Dropped
 
 ---
 
-## Phase 4 - Data Layer 🟡
+## Phase 4 - Data Layer ✅
 
 **Goal:** working loader that returns a clean `(text, label)` DataFrame; class balance understood.
 
-**Learning sprint:**
-- Acquire BGL dataset (raw `BGL.log` and `BGL.log_structured.csv` from LogHub); place under `data/raw/`
-- Inspect both files; decide which to load (based on which gives a correct loader in fewer lines of code)
-- Decide which field becomes `text` (Content, with Level excluded, is the honest ML setup; document choice as a markdown cell with one-sentence rationale)
-- Notebook cell: loader function returning DataFrame with exactly two columns - `text` and binarized `label` (0 = normal, 1 = anomaly)
-- Print and record class balance ratio
-- Any further EDA that surfaces during exploration (line length distribution, vocab size, duplicate-message frequency) is welcome; keep it in the notebook
+**Note on dataset:** at full scale LogHub publishes only the raw `BGL.log` on Zenodo. The structured CSV exists only as a 2,000-line sample, too small for training, so the raw file is parsed directly.
 
-**Polish pass (after learning is done, before phase closes):**
-- Promote the notebook loader function to `src/loglens/data.py`
-- `data/raw/README.md` documenting dataset source, license, and which file the loader expects
-- `tests/test_data.py`: shape assertions, no-null guarantees, label-domain validation
-- Optional: `scripts/download_dataset.py` if dataset acquisition needs to be reproducible from the repo
+**Learning sprint (completed):**
+- Acquired raw `BGL.log` (~4.75M lines) under `data/raw/`
+- Parsed the 10-field format with `str.split(n=9)` (Content field contains spaces, breaks naive CSV parsing)
+- Chose `text` = Content only, `Level` excluded (excluding Level avoids leaking the label into features)
+- Binarized label (0 = normal, 1 = anomaly)
+- Recorded class balance and surfaced key data findings
+
+**Key data findings:**
+- Raw anomaly ratio: 7.34%; **unique-row anomaly ratio: 13.69%** (normal logs are more templated than anomalies)
+- **92% of lines are exact duplicates** - only ~358K unique texts out of 4.75M. Drives the dedup-before-split decision in Phase 5.
+- 3 texts carry inconsistent labels (label noise, < 0.001% impact)
+- ~316 malformed rows dropped via canonical Level filter; ~34K null-Content rows dropped
+
+**Polish pass (completed):**
+- [x] Loader promoted to `src/loglens/data.py` (`load_bgl(path, deduplicate=True)`, `CANONICAL_LEVELS` constant)
+- [x] `data/raw/README.md` documenting source, license, parser assumptions, and why the folder is empty on a fresh clone
+- [x] `tests/test_data.py`: 11 tests covering shape, nulls, label domain, dedup, malformed-row dropping (all passing)
+- [x] Committed and pushed (`feat(data): added BGL loader, tests, and dataset docs`)
 
 **Required reading:** [LogHub repo overview](https://github.com/logpai/loghub).
 
-**Exit criteria:** loader works in notebook; class balance recorded; `text` column decision documented; polish pass items completed and committed.
+**Exit criteria:** loader works and is tested; class balance recorded; `text` decision documented; polish pass committed. ✅
 
 ---
 
@@ -182,7 +189,7 @@ Legend: ✅ Done · 🟡 Current · 🔵 Planned · ⚪ Deferred · ❌ Dropped
 **Goal:** deployable service with a public URL.
 
 **Planned work:**
-- Focused Docker learning detour (2–3 days) before adding the tool
+- Focused Docker learning detour (2-3 days) before adding the tool
 - Multi-stage `Dockerfile`: builder + minimal runtime (with uv cache mounts)
 - `docker compose up` runs the full stack locally
 - Push image to GitHub Container Registry
@@ -219,6 +226,8 @@ Decisions that propagate forward; not revisited without reason.
 | 4 | BGL dataset (over HDFS / Thunderbird) | Scaling test needed (Thunderbird listed as Phase 8 stretch) |
 | 4 | Notebook-first; promote to module only when imported elsewhere | Never expected (general principle) |
 | 4 | Text input = Content only, Level excluded | After baseline; full-row variant as ablation experiment |
+| 4 | Train on unique (deduplicated) texts; consider raw distribution at eval | When evaluating - report both training-view and production-view metrics |
+| 4 | Drop malformed rows via canonical Level filter | Never expected |
 | Pending | Defer Docker until Phase 8 | After Phase 7 closes |
 
 ---
@@ -236,6 +245,7 @@ Decisions that propagate forward; not revisited without reason.
 
 Updates to this plan, keyed to phase completions (most recent first).
 
+- **After Phase 4 close** - BGL loader promoted to `src/loglens/data.py` (`deduplicate` flag, `CANONICAL_LEVELS` constant); 11 passing tests; dataset documented in `data/raw/README.md`. Data findings: 92% duplicate lines, 13.69% anomaly ratio on unique rows vs 7.34% raw. Structured CSV unavailable at full scale, so raw file is parsed directly.
 - **After Phase 3 close** - repo published on GitHub; VS Code settings standardized for pre-commit compliance; this plan committed to `docs/`.
 - **After Phase 2 close** - scaffold committed; ML folder structure established.
 - **After Phase 1 close** - identity layer verified.
